@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -28,21 +29,12 @@ func matchTweet(tweetText string) bool {
 	return strings.Contains(strings.ToLower(tweetText), "i have the ball")
 }
 
-func postResponse(api *anaconda.TwitterApi, t anaconda.Tweet) (string, error) {
-	newTweetText := fmt.Sprintf("@%s has the ball!", t.User.ScreenName)
-	newTweet, err := api.PostTweet(newTweetText, url.Values{})
-	if err != nil {
-		return fmt.Sprintf("could not tweet '%s': %v", newTweetText, err), err
-	}
-	return fmt.Sprintf("retweeted %d", newTweet.Id), nil
-}
-
 func main() {
 	anaconda.SetConsumerKey(consumerKey)
 	anaconda.SetConsumerSecret(consumerSecret)
 	api := anaconda.NewTwitterApi(accessToken, accessTokenSecret)
 
-	log := newLogger()
+	log := &logger{logrus.New()}
 	api.SetLogger(log)
 
 	stream := api.PublicStreamFilter(url.Values{
@@ -64,10 +56,13 @@ func main() {
 			continue
 		}
 
-		if msg, err := postResponse(api, t); err != nil {
-			log.Info(msg)
-		} else {
-			log.Error(msg)
+		newTweetText := fmt.Sprintf("@%s has the ball! 🏆⚽️", t.User.ScreenName)
+		newTweet, err := api.PostTweet(newTweetText, url.Values{})
+		if err != nil {
+			log.Errorf("could not tweet '%s': %v", newTweetText, err)
+			continue
 		}
+
+		log.Infof("Tweeted %d", newTweet.Id)
 	}
 }
