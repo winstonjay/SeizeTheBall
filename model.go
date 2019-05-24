@@ -17,14 +17,14 @@ var (
 		getenv("DB_PASSWORD"),
 		getenv("BD_USERNAME"),
 		getenv("DB_HOSTNAME"),
-		getenv("DB_NAME"),
+		getenv("DB_SCHEMA"),
 	}
 	connectStr = fmt.Sprintf("%s:%s@tcp(%s)/%s",
 		dbConfig.username, dbConfig.password, dbConfig.hostname, dbConfig.dbname)
 )
 
-// insert user and return the inserted ID
-func insertUser(db *sql.DB, screenname, id string) (int64, error) {
+// create user and return the inserted ID
+func createUser(db *sql.DB, screenname, id string) (int64, error) {
 	stmt, err := db.Prepare(
 		`insert into user (twitter_screenname, twitter_id) values (?, ?)`)
 	if err != nil {
@@ -34,9 +34,9 @@ func insertUser(db *sql.DB, screenname, id string) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
-	lastId, err := res.LastInsertId()
+	lastID, err := res.LastInsertId()
 	if err != nil {
 		return -1, err
 	}
-	return lastId, err
+	return lastID, err
 }

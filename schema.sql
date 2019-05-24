@@ -1,24 +1,23 @@
-DROP DATABASE `whohastheball` IF EXISTS; 
-CREATE DATABASE `whohastheball`;
+DROP SCHEMA IF EXISTS `seizetheball`;
+CREATE SCHEMA `seizetheball`;
 
-CREATE TABLE `whohastheball`.`user` (
+CREATE TABLE `seizetheball`.`user` (
   `user_id` INT NOT NULL AUTO_INCREMENT,
   `twitter_id` VARCHAR(45) NOT NULL,
   `twitter_screenname` VARCHAR(15) NULL,
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
-  `catches` INT NULL DEFAULT 1,
-  PRIMARY KEY (`user_id`, `twitter_id_str`));
+  PRIMARY KEY (`user_id`, `twitter_id`));
 
-CREATE TABLE `whohastheball`.`possession` (
-  `possession_id` INT NOT NULL AUTO_INCREMENT,
+CREATE TABLE `seizetheball`.`seize` (
+  `seize_id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT(11) NOT NULL,
-  `received_at` DATETIME NOT NULL DEFAULT NOW(),
-  `taken_at` DATETIME NULL,
+  `start` DATETIME NOT NULL DEFAULT NOW(),
+  `end` DATETIME NULL,
   `duration` INT NULL,
-  PRIMARY KEY (`possession_id`),
-  INDEX `FK_USER_ID_idx` (`user_id` ASC) VISIBLE,
+  PRIMARY KEY (`seize_id`),
+  INDEX `FK_USER_ID_idx` (`user_id` ASC),
   CONSTRAINT `FK_USER_ID`
     FOREIGN KEY (`user_id`)
-    REFERENCES `whohastheball`.`user` (`user_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
+    REFERENCES `seizetheball`.`user` (`user_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE);
