@@ -4,7 +4,7 @@ CREATE SCHEMA `seizetheball`;
 CREATE TABLE `seizetheball`.`user` (
   `user_id` INT NOT NULL AUTO_INCREMENT,
   `twitter_id` VARCHAR(45) NOT NULL,
-  `twitter_screenname` VARCHAR(15) NULL,
+  `screen_name` VARCHAR(15) NULL,
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`user_id`, `twitter_id`));
 

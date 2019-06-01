@@ -1,8 +1,8 @@
 
 
 test:
-	go test .
+	go test -cover -v
 
 # will prompt for password
-localdb:
+database:
 	mysql -uroot -p < schema.sql
