@@ -48,6 +48,11 @@ type Possession struct {
 	Duration     int        `json:"duration"`
 }
 
+// Connect :
+func Connect() (*sql.DB, error) {
+	return sql.Open("mysql", connectStr)
+}
+
 // RegisterBallSeize : ...
 func RegisterBallSeize(tweetID, twitterID, screenName string) error {
 	db, err := sql.Open("mysql", connectStr)
