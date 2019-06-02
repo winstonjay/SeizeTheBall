@@ -17,18 +17,6 @@ var (
 	accessTokenSecret = getenv("TWITTER_ACCESS_TOKEN_SECRET")
 )
 
-func getenv(name string) string {
-	v := os.Getenv(name)
-	if v == "" {
-		panic("missing required environment variable " + name)
-	}
-	return v
-}
-
-func matchTweet(tweetText string) bool {
-	return strings.Contains(strings.ToLower(tweetText), "i have the ball")
-}
-
 func main() {
 	anaconda.SetConsumerKey(consumerKey)
 	anaconda.SetConsumerSecret(consumerSecret)
@@ -53,16 +41,35 @@ func main() {
 			continue
 		}
 		if !matchTweet(t.Text) {
+			log.Infof("recived tweet with unmatching text got='%s'", t.Text)
 			continue
 		}
 
+		// Register who has now taken possession of the ball in out database.
+		err := RegisterBallSeize(t.IdStr, t.User.IdStr, t.User.ScreenName)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		// Finally tell twitter who now has possession of the ball.
 		newTweetText := fmt.Sprintf("@%s has the ball! 🏆⚽️", t.User.ScreenName)
 		newTweet, err := api.PostTweet(newTweetText, url.Values{})
 		if err != nil {
 			log.Errorf("could not tweet '%s': %v", newTweetText, err)
-			continue
+			return
 		}
-
 		log.Infof("Tweeted %d", newTweet.Id)
 	}
+}
+
+func getenv(name string) string {
+	v := os.Getenv(name)
+	if v == "" {
+		panic("missing required environment variable " + name)
+	}
+	return v
+}
+
+func matchTweet(tweetText string) bool {
+	return strings.Contains(strings.ToLower(tweetText), "i have the ball")
 }

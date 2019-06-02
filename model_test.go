@@ -6,14 +6,18 @@ import (
 )
 
 type testInput struct {
+	tweetID    string
 	screenName string
 	twitterID  string
 }
 
 var userTestData = []testInput{
-	{twitterID: "123324435", screenName: "abc"},
-	{twitterID: "543213231", screenName: "xyz"},
-	{twitterID: "123132123", screenName: "231434"},
+	{tweetID: "852021818290352000", twitterID: "123324435", screenName: "abc"},
+	{tweetID: "852021818290352100", twitterID: "543213231", screenName: "xyz"},
+	{tweetID: "852021818290352110", twitterID: "123132123", screenName: "231434"},
+	{tweetID: "852021818290352129", twitterID: "622857704", screenName: "crucial_tech"},
+	{tweetID: "852021818290352130", twitterID: "816653", screenName: "TechCrunch"},
+	{tweetID: "852021818290352150", twitterID: "18961853", screenName: "nottora2"},
 }
 
 func TestConnection(t *testing.T) {
@@ -27,12 +31,92 @@ func TestConnection(t *testing.T) {
 	}
 }
 
-func TestCreateUser(t *testing.T) {
-	db, err := sql.Open("mysql", connectStr)
-	if err != nil {
-		t.Fatalf("Connection failed: %s\ncoonectStr=%s", err, connectStr)
+func TestRegisterBallSeize(t *testing.T) {
+	// to cleanUp all the records we will be creating.
+	defer cleanUpTestDB(setupTestDB())
+	for i, v := range userTestData {
+		err := RegisterBallSeize(v.tweetID, v.twitterID, v.screenName)
+		if err != nil {
+			t.Errorf("RegisterBallSeize failed at test %d\n%s", i, err)
+		}
 	}
-	defer cleanUp(db)
+}
+
+func TestCreatePossesssion(t *testing.T) {
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
+	for i, v := range userTestData {
+		err := CreatePossession(db, v.tweetID, v.twitterID, v.screenName)
+		if err != nil {
+			t.Errorf("CreatePossession failed at test %d\n%s", i, err)
+		}
+	}
+}
+
+func TestGetAllPossesssions(t *testing.T) {
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
+	for _, v := range userTestData {
+		err := CreatePossession(db, v.tweetID, v.twitterID, v.screenName)
+		if err != nil {
+			panic(err)
+		}
+	}
+	possessions, err := GetAllPossessions(db)
+	if err != nil {
+		t.Fatalf("Could not get all possessions.\n%s", err)
+	}
+	if len(possessions) != len(userTestData) {
+		t.Errorf("wrong number of possessions created. want=%d got=%d",
+			len(userTestData), len(possessions))
+	}
+	for i, p := range possessions {
+		if p.TweetID != userTestData[i].tweetID {
+			t.Errorf("wrong Possession.TweetID at position %d. want=%s got=%s",
+				i, userTestData[i].tweetID, p.TweetID)
+		}
+		if p.User.TwitterID != userTestData[i].twitterID {
+			t.Errorf("wrong Possession.User.TwitterID at position %d. want=%s got=%s",
+				i, userTestData[i].twitterID, p.User.TwitterID)
+		}
+		if p.User.ScreenName != userTestData[i].screenName {
+			t.Errorf("wrong Possession.User.ScreenName at position %d. want=%s got=%s",
+				i, userTestData[i].screenName, p.User.ScreenName)
+		}
+	}
+}
+
+func TestEndLastPoessession(t *testing.T) {
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
+	for i, v := range userTestData {
+		err := CreatePossession(db, v.tweetID, v.twitterID, v.screenName)
+		if err != nil {
+			panic(err)
+		}
+		err = EndLastPossession(db)
+		if err != nil {
+			t.Errorf("EndLastPossession failed at test %d\n%s", i, err)
+		}
+	}
+	possessions, err := GetAllPossessions(db)
+	if err != nil {
+		t.Fatalf("Could not get all possessions.\n%s", err)
+	}
+	if len(possessions) != len(userTestData) {
+		t.Errorf("wrong number of possessions created. want=%d got=%d",
+			len(userTestData), len(possessions))
+	}
+	for i, p := range possessions {
+		if p.End == nil {
+			t.Errorf("Possession.End == nil at test %d", i)
+		}
+	}
+}
+
+func TestCreateUser(t *testing.T) {
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
 	testUserIDs := createTestUsers(t, db, userTestData)
 	users, err := GetAllUsers(db)
 	if err != nil {
@@ -58,11 +142,8 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUserID(t *testing.T) {
-	db, err := sql.Open("mysql", connectStr)
-	if err != nil {
-		t.Fatalf("Connection failed: %s\ncoonectStr=%s", err, connectStr)
-	}
-	defer cleanUp(db)
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
 	for i, inID := range createTestUsers(t, db, userTestData) {
 		twitterID := userTestData[i].twitterID
 		outID, err := GetUserID(db, twitterID)
@@ -77,11 +158,8 @@ func TestGetUserID(t *testing.T) {
 }
 
 func TestGetOrCreateUser(t *testing.T) {
-	db, err := sql.Open("mysql", connectStr)
-	if err != nil {
-		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connectStr)
-	}
-	defer cleanUp(db)
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
 	// First we will run a round to test if all our users get created.
 	testUserIDs := make([]int, len(userTestData))
 	for i, testInput := range userTestData {
@@ -112,9 +190,20 @@ func TestGetOrCreateUser(t *testing.T) {
 	}
 }
 
-// cleanUpDB : helper function to remove all created entries closin
-func cleanUp(db *sql.DB) {
+func setupTestDB() *sql.DB {
+	db, err := sql.Open("mysql", connectStr)
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func cleanUpTestDB(db *sql.DB) {
 	_, err := db.Exec(`delete from user`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec(`delete from possession`)
 	if err != nil {
 		panic(err)
 	}

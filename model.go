@@ -33,50 +33,67 @@ type User struct {
 }
 
 func (u *User) String() string {
-	return fmt.Sprintf("User(UserID=%d TwitterID=%s ScreenName=%s CreatedAt=%s",
+	return fmt.Sprintf("User(UserID=%d TwitterID=%s ScreenName=%s CreatedAt=%s)",
 		u.UserID, u.TwitterID, u.ScreenName, u.CreatedAt)
 }
 
 // Possession : is
 type Possession struct {
-	PossessionID int       `json:"seizeID"`
-	User         User      `json:"user"`
-	Start        time.Time `json:"start"`
-	End          time.Time `json:"end"`
-	Duration     int       `json:"duration"`
+	PossessionID int        `json:"seizeID"`
+	TweetID      string     `json:"tweetID"`
+	User         User       `json:"user"`
+	Start        *time.Time `json:"start"`
+	End          *time.Time `json:"end"`
+	Duration     int        `json:"duration"`
 }
 
-func ballSeize(db *sql.DB, twitterID, screenName string) error {
-	// TODO: test this, and all the rabbit holes it creates
-	// havent tried to run at all yet.
-	_, err := db.Exec(
-		`update user
-		set end = now(), duration = timestampdiff(second, start, now())
-		where user_id = max(user_id)`)
+// RegisterBallSeize : ...
+func RegisterBallSeize(tweetID, twitterID, screenName string) error {
+	db, err := sql.Open("mysql", connectStr)
 	if err != nil {
 		return err
 	}
-	return createPossession(db, twitterID, screenName)
+	defer db.Close()
+	if err := EndLastPossession(db); err != nil {
+		return err
+	}
+	return CreatePossession(db, tweetID, twitterID, screenName)
 }
 
-func createPossession(db *sql.DB, twitterID, screenName string) error {
+// CreatePossession : ...
+func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	userID, err := GetOrCreateUser(db, twitterID, screenName)
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec(`insert into user (user_id) values (?)`, userID)
+	stmt, err := db.Prepare(
+		`insert into possession (tweet_id, user_id) values (?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(tweetID, userID)
+	return err
+}
+
+// EndLastPossession : ...
+func EndLastPossession(db *sql.DB) error {
+	_, err := db.Exec(
+		`update possession
+		set end = now(), duration = timestampdiff(second, start, now())
+		where possession_id = @@identity`)
 	return err
 }
 
 // GetAllPossessions : Get all possessions in database
 func GetAllPossessions(db *sql.DB) ([]Possession, error) {
-	q := `select (
-		p.possession_id, p.Start, p.End, p.Duration,
+	res, err := db.Query(`
+	select
+		p.possession_id, p.tweet_id, p.start, p.end, p.duration,
 		u.user_id, u.twitter_id, u.screen_name, u.created_at
-	)
-	from Possession as p
-	inner join user as u on p.user_id = u.user_id`
-	res, err := db.Query(q)
+	from possession as p
+	inner join user as u on u.user_id=p.user_id
+	order by p.possession_id asc`)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +102,7 @@ func GetAllPossessions(db *sql.DB) ([]Possession, error) {
 	for res.Next() {
 		var p Possession
 		err = res.Scan(
-			&p.PossessionID, &p.Start, &p.End, &p.Duration,
+			&p.PossessionID, &p.TweetID, &p.Start, &p.End, &p.Duration,
 			&p.User.UserID, &p.User.TwitterID, &p.User.ScreenName, &p.User.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -132,7 +149,7 @@ func CreateUser(db *sql.DB, twitterID, screenName string) (int, error) {
 
 // GetAllUsers : get all Users from the database ordered by userID
 func GetAllUsers(db *sql.DB) ([]User, error) {
-	res, err := db.Query(`select * from user order by user_id`)
+	res, err := db.Query(`select * from user order by user_id asc`)
 	if err != nil {
 		return nil, err
 	}
