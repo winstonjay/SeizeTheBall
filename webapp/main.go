@@ -1,31 +1,33 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
+	"html/template"
 	"net/http"
 
 	"github.com/winstonjay/seizeTheBall/model"
+
+	"google.golang.org/appengine"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
+var indexTemplate = template.Must(template.ParseFiles("index.html"))
+
+func main() {
+	http.HandleFunc("/", indexHandler)
+	appengine.Main()
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
 	db, err := model.Connect()
 	if err != nil {
 		panic(err)
 	}
-	users, err := model.GetAllUsers(db)
+	p, err := model.CurrentBallOwner(db)
 	if err != nil {
 		panic(err)
 	}
-	s, err := json.Marshal(users)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Fprintf(w, string(s))
-}
-
-func main() {
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	indexTemplate.Execute(w, p)
 }

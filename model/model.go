@@ -66,6 +66,30 @@ func RegisterBallSeize(tweetID, twitterID, screenName string) error {
 	return CreatePossession(db, tweetID, twitterID, screenName)
 }
 
+// CurrentBallOwner : ...
+func CurrentBallOwner(db *sql.DB) (Possession, error) {
+	var p Possession
+	res, err := db.Query(`
+	select
+		p.possession_id, p.tweet_id, p.start, p.end, p.duration,
+		u.user_id, u.twitter_id, u.screen_name, u.created_at
+	from (select * from possession order by possession_id desc limit 1) as p
+	inner join user as u on u.user_id=p.user_id`)
+	if err != nil {
+		return p, err
+	}
+	defer res.Close()
+	for res.Next() {
+		err = res.Scan(
+			&p.PossessionID, &p.TweetID, &p.Start, &p.End, &p.Duration,
+			&p.User.UserID, &p.User.TwitterID, &p.User.ScreenName, &p.User.CreatedAt)
+		if err != nil {
+			return p, err
+		}
+	}
+	return p, nil
+}
+
 // CreatePossession : ...
 func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	userID, err := GetOrCreateUser(db, twitterID, screenName)

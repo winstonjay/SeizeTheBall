@@ -1,8 +1,8 @@
-# Snatch the Ball!
+# Seize the Ball!
 
 **WORK IN PROGRESS**
 
-A virtual ball game to play on Twitter. Snatch the ball by tweeting by and see how long you can keep hold of it.
+A virtual ball game to play on Twitter. Seize the ball by tweeting "@seizeTheBall I have the ball" and see how long you manage keep hold of it.
 
 ## Environment Setup
 You will need a MySQL server and a [Twitter developer](https://developer.twitter.com/content/developer-twitter/en.html) account and an app created to generate the credentials required for this application.
@@ -15,7 +15,7 @@ You will need a MySQL server and a [Twitter developer](https://developer.twitter
 $ for line in $(cat .env); do export $line; done
 ```
 
-**Setup database**: Using MySQL 6 or later create the database schema.
+**Setup database**: Using MySQL 5.6 or later create the database schema.
 
 ```
 $ make localdb

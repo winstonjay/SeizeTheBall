@@ -1,3 +1,4 @@
-
+# environment varibles
 .env
-webpage/
+env.yaml
+.env.local

@@ -3,8 +3,8 @@
 test:
 	go test ./... -cover -v
 
-# will prompt for password
-database:
-	mysql -uroot -p < model/schema.sql
+schema:
+	mysql -uroot -p < schema.sql
 
-# SELECT * FROM seizetheball.possession;
+conn_db:
+	mysql -h ${DB_HOSTNAME} -u ${DB_USERNAME} -p ${DB_SCHEMA}

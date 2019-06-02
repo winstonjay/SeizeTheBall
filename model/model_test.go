@@ -59,6 +59,24 @@ func TestRegisterBallSeize(t *testing.T) {
 	}
 }
 
+func TestCurrentBallOwner(t *testing.T) {
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
+	for i, v := range userTestData {
+		err := RegisterBallSeize(v.tweetID, v.twitterID, v.screenName)
+		if err != nil {
+			panic(err)
+		}
+		p, err := CurrentBallOwner(db)
+		if err != nil {
+			t.Errorf("CurrentBallOwner failed at test %d\n%s", i, err)
+		}
+		if p.TweetID != v.tweetID {
+			t.Errorf("wrong tweetID. want=%s got=%s", v.tweetID, p.TweetID)
+		}
+	}
+}
+
 func TestCreatePossesssion(t *testing.T) {
 	db := setupTestDB()
 	defer cleanUpTestDB(db)
