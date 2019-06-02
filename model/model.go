@@ -1,8 +1,9 @@
-package main
+package model
 
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -78,10 +79,12 @@ func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 
 // EndLastPossession : ...
 func EndLastPossession(db *sql.DB) error {
-	_, err := db.Exec(
+	var lastID int
+	err := db.QueryRow(`select max(possession_id) from possession`).Scan(&lastID)
+	_, err = db.Exec(
 		`update possession
 		set end = now(), duration = timestampdiff(second, start, now())
-		where possession_id = @@identity`)
+		where possession_id=?`, lastID)
 	return err
 }
 
@@ -193,4 +196,12 @@ func getUser(db *sql.DB, userID int) (User, error) {
 		}
 	}
 	return u, nil
+}
+
+func getenv(name string) string {
+	v := os.Getenv(name)
+	if v == "" {
+		panic("missing required environment variable " + name)
+	}
+	return v
 }

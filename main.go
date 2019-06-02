@@ -1,13 +1,16 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/ChimeraCoder/anaconda"
-	"github.com/sirupsen/logrus"
+	"github.com/winstonjay/seizeTheBall/logger"
+	"github.com/winstonjay/seizeTheBall/model"
 )
 
 var (
@@ -22,11 +25,11 @@ func main() {
 	anaconda.SetConsumerSecret(consumerSecret)
 	api := anaconda.NewTwitterApi(accessToken, accessTokenSecret)
 
-	log := &logger{logrus.New()}
+	log := logger.NewLogger()
 	api.SetLogger(log)
 
 	stream := api.PublicStreamFilter(url.Values{
-		"track": []string{"@whohastheball_"},
+		"track": []string{"@seizetheball"},
 	})
 
 	defer stream.Stop()
@@ -46,13 +49,15 @@ func main() {
 		}
 
 		// Register who has now taken possession of the ball in out database.
-		err := RegisterBallSeize(t.IdStr, t.User.IdStr, t.User.ScreenName)
+		err := model.RegisterBallSeize(t.IdStr, t.User.IdStr, t.User.ScreenName)
 		if err != nil {
 			log.Error(err)
 			return
 		}
+		log.Infof("Registered new BallSeize. tweet=%s", t.IdStr)
 		// Finally tell twitter who now has possession of the ball.
-		newTweetText := fmt.Sprintf("@%s has the ball! 🏆⚽️", t.User.ScreenName)
+		newTweetText := fmt.Sprintf("@%s has the ball! 🏆⚽️\n%s",
+			t.User.ScreenName, uniqueIDString())
 		newTweet, err := api.PostTweet(newTweetText, url.Values{})
 		if err != nil {
 			log.Errorf("could not tweet '%s': %v", newTweetText, err)
@@ -72,4 +77,14 @@ func getenv(name string) string {
 
 func matchTweet(tweetText string) bool {
 	return strings.Contains(strings.ToLower(tweetText), "i have the ball")
+}
+
+func uniqueIDString() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

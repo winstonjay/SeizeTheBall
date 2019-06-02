@@ -1,4 +1,4 @@
-package main
+package logger
 
 import "github.com/sirupsen/logrus"
 
@@ -6,7 +6,8 @@ type logger struct {
 	*logrus.Logger
 }
 
-func newLogger() *logger { return &logger{logrus.New()} }
+// NewLogger :
+func NewLogger() *logger { return &logger{logrus.New()} }
 
 func (log *logger) Critical(args ...interface{})                 { log.Error(args...) }
 func (log *logger) Criticalf(format string, args ...interface{}) { log.Errorf(format, args...) }

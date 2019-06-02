@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"database/sql"
@@ -33,11 +33,28 @@ func TestConnection(t *testing.T) {
 
 func TestRegisterBallSeize(t *testing.T) {
 	// to cleanUp all the records we will be creating.
-	defer cleanUpTestDB(setupTestDB())
+	db := setupTestDB()
+	defer cleanUpTestDB(db)
 	for i, v := range userTestData {
 		err := RegisterBallSeize(v.tweetID, v.twitterID, v.screenName)
 		if err != nil {
 			t.Errorf("RegisterBallSeize failed at test %d\n%s", i, err)
+		}
+	}
+	possessions, err := GetAllPossessions(db)
+	if err != nil {
+		t.Fatalf("Could not get all possessions.\n%s", err)
+	}
+	if len(possessions) != len(userTestData) {
+		t.Errorf("wrong number of possessions created. want=%d got=%d",
+			len(userTestData), len(possessions))
+	}
+	for i, p := range possessions {
+		if i == len(possessions)-1 {
+			break
+		}
+		if p.End == nil {
+			t.Errorf("Possession.End == nil at test %d", i)
 		}
 	}
 }
