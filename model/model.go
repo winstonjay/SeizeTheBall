@@ -10,64 +10,49 @@ import (
 )
 
 var (
-	dbConfig = struct {
-		password string
-		username string
-		hostname string
-		schema   string
-	}{
-		getenv("DB_PASSWORD"),
-		getenv("BD_USERNAME"),
-		getenv("DB_HOSTNAME"),
-		getenv("DB_SCHEMA"),
-	}
-	connectStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
-		dbConfig.username, dbConfig.password, dbConfig.hostname, dbConfig.schema)
+	username = getenv("BD_USERNAME")
+	password = getenv("DB_PASSWORD")
+	hostname = getenv("DB_HOSTNAME")
+	schema   = getenv("DB_SCHEMA")
+	connfmt  = "%s:%s@tcp(%s)/%s?parseTime=true"
 )
 
-// User : is
+var connStr = fmt.Sprintf(connfmt, username, password, hostname, schema)
+
+// User :
 type User struct {
-	UserID     int       `json:"userID"`
-	TwitterID  string    `json:"twitterID"`
-	ScreenName string    `json:"screenName"`
-	CreatedAt  time.Time `json:"createdAt"`
+	UserID     int       `json:"userID"`     // user_id
+	TwitterID  string    `json:"twitterID"`  // twitter_id
+	ScreenName string    `json:"screenName"` // screen_name
+	CreatedAt  time.Time `json:"createdAt"`  // created_at
 }
 
-func (u *User) String() string {
-	return fmt.Sprintf("User(UserID=%d TwitterID=%s ScreenName=%s CreatedAt=%s)",
-		u.UserID, u.TwitterID, u.ScreenName, u.CreatedAt)
-}
-
-// Possession : is
+// Possession : model for recording who has/had the ball when;
+// data-structure follows MySQL schema with user_id
 type Possession struct {
-	PossessionID int        `json:"seizeID"`
-	TweetID      string     `json:"tweetID"`
-	User         User       `json:"user"`
-	Start        *time.Time `json:"start"`
-	End          *time.Time `json:"end"`
-	Duration     int        `json:"duration"`
+	PossessionID int        `json:"seizeID"`  // possession_id
+	TweetID      string     `json:"tweetID"`  // tweet_id
+	User         User       `json:"user"`     // user_id (FK joined)
+	Start        *time.Time `json:"start"`    // start
+	End          *time.Time `json:"end"`      // end
+	Duration     int        `json:"duration"` // duration
 }
 
-// Connect :
+// Connect : external function connect to our sql database
 func Connect() (*sql.DB, error) {
-	return sql.Open("mysql", connectStr)
+	return sql.Open("mysql", connStr)
 }
 
-// RegisterBallSeize : ...
-func RegisterBallSeize(tweetID, twitterID, screenName string) error {
-	db, err := sql.Open("mysql", connectStr)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+// RegisterPossession :
+func RegisterPossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	if err := EndLastPossession(db); err != nil {
 		return err
 	}
 	return CreatePossession(db, tweetID, twitterID, screenName)
 }
 
-// CurrentBallOwner : ...
-func CurrentBallOwner(db *sql.DB) (Possession, error) {
+// CurrentPossession : return the last ball possession registered
+func CurrentPossession(db *sql.DB) (Possession, error) {
 	var p Possession
 	res, err := db.Query(`
 	select

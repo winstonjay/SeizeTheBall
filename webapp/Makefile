@@ -1,12 +1,15 @@
 
 deploy:
-	gcloud app deploy --project=${PROJECT_NAME} --verbosity=info
+	gcloud app deploy --project=seizetheball
 
 serve:
 	dev_appserver.py app.yaml
 
 browse:
-	gcloud app browse --project=${PROJECT_NAME}
+	gcloud app browse --project=seizetheball
 
 create:
-	gcloud app create --project=${PROJECT_NAME} --region=europe-west2
+	gcloud app create --project=seizetheball --region=europe-west2
+
+viewlogs:
+	gcloud app logs tail -s default

@@ -9,12 +9,29 @@ html {
     min-height: 100vh;
     font-family: 'Montserrat', sans-serif;
     background-color: #4302F5;
-    background: linear-gradient(to bottom, #31189a 0%,#4302f5 30%,#4302f5 70%,#4300FF 100%);
     letter-spacing: 2px;
     color: #fff;
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+header {
+    padding: 16px;
+}
+header nav {
+    float: right;
+}
+h1.title {
+    font-weight: 900;
+    color: #fff;
+    font-size: 20px;
+    letter-spacing: 2px;
+}
+nav li {
+    display: inline-block;
+    font-size: 14px;
+    text-transform: uppercase;
+    padding: 8px;
 }
 main {
     z-index: -1;
@@ -27,22 +44,39 @@ main {
     align-items: center;
     position: fixed;
 }
-h1 {
+h2.headline {
     font-weight: 900;
     text-align: center;
-    font-size: 10vw;
+    font-size: 64px;
     letter-spacing: 2px;
     color: #1BD1FE;
     margin-bottom: 24px;
 }
 span {
     display: block;
+    color: #fff;
 }
 a {
     text-decoration: none;
     color: #fff;
     cursor: pointer;
 }
-span {
-    color: #fff;
+
+
+@media only screen and (max-width: 767px) {
+    h2.headline {
+      font-size: 48px;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    h2.headline {
+      font-size: 32px;
+    }
+}
+
+@media only screen and (max-width: 400px) {
+    h2.headline {
+      font-size: 24px;
+    }
 }

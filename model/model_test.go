@@ -21,24 +21,24 @@ var userTestData = []testInput{
 }
 
 func TestConnection(t *testing.T) {
-	db, err := sql.Open("mysql", connectStr)
+	db, err := sql.Open("mysql", connStr)
 	if err != nil {
-		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connectStr)
+		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connStr)
 	}
 	defer db.Close()
 	if err := db.Ping(); err != nil {
-		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connectStr)
+		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connStr)
 	}
 }
 
-func TestRegisterBallSeize(t *testing.T) {
+func TestRegisterPossession(t *testing.T) {
 	// to cleanUp all the records we will be creating.
 	db := setupTestDB()
 	defer cleanUpTestDB(db)
 	for i, v := range userTestData {
-		err := RegisterBallSeize(v.tweetID, v.twitterID, v.screenName)
+		err := RegisterPossession(db, v.tweetID, v.twitterID, v.screenName)
 		if err != nil {
-			t.Errorf("RegisterBallSeize failed at test %d\n%s", i, err)
+			t.Errorf("RegisterPossession failed at test %d\n%s", i, err)
 		}
 	}
 	possessions, err := GetAllPossessions(db)
@@ -59,17 +59,17 @@ func TestRegisterBallSeize(t *testing.T) {
 	}
 }
 
-func TestCurrentBallOwner(t *testing.T) {
+func TestCurrentPossession(t *testing.T) {
 	db := setupTestDB()
 	defer cleanUpTestDB(db)
 	for i, v := range userTestData {
-		err := RegisterBallSeize(v.tweetID, v.twitterID, v.screenName)
+		err := RegisterPossession(db, v.tweetID, v.twitterID, v.screenName)
 		if err != nil {
 			panic(err)
 		}
-		p, err := CurrentBallOwner(db)
+		p, err := CurrentPossession(db)
 		if err != nil {
-			t.Errorf("CurrentBallOwner failed at test %d\n%s", i, err)
+			t.Errorf("CurrentPossession failed at test %d\n%s", i, err)
 		}
 		if p.TweetID != v.tweetID {
 			t.Errorf("wrong tweetID. want=%s got=%s", v.tweetID, p.TweetID)
@@ -226,7 +226,7 @@ func TestGetOrCreateUser(t *testing.T) {
 }
 
 func setupTestDB() *sql.DB {
-	db, err := sql.Open("mysql", connectStr)
+	db, err := sql.Open("mysql", connStr)
 	if err != nil {
 		panic(err)
 	}

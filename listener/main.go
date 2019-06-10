@@ -20,6 +20,11 @@ var (
 	accessTokenSecret = getenv("TWITTER_ACCESS_TOKEN_SECRET")
 )
 
+const (
+	keyphrase  = "i have the ball"
+	screenName = "@seizetheball"
+)
+
 func main() {
 	anaconda.SetConsumerKey(consumerKey)
 	anaconda.SetConsumerSecret(consumerSecret)
@@ -29,7 +34,7 @@ func main() {
 	api.SetLogger(log)
 
 	stream := api.PublicStreamFilter(url.Values{
-		"track": []string{"@seizetheball"},
+		"track": []string{screenName},
 	})
 
 	defer stream.Stop()
@@ -48,24 +53,31 @@ func main() {
 			continue
 		}
 
-		// Register who has now taken possession of the ball in out database.
-		err := model.RegisterBallSeize(t.IdStr, t.User.IdStr, t.User.ScreenName)
+		db, err := model.Connect()
+		defer db.Close()
 		if err != nil {
-			log.Error(err)
-			return
+			log.Errorf("Could not connect to DB: %s", err)
 		}
-		log.Infof("Registered new BallSeize. tweet=%s", t.IdStr)
+		// Register who has now taken possession of the ball in out database.
+		err = model.RegisterPossession(db, t.IdStr, t.User.IdStr, t.User.ScreenName)
+		if err != nil {
+			log.Errorf("Could not register possession: %s", err)
+			continue
+		}
+		log.Infof("Registered new possession. tweet=%s", t.IdStr)
 		// Finally tell twitter who now has possession of the ball.
 		newTweetText := fmt.Sprintf("@%s has the ball! 🏆⚽️\n%s",
 			t.User.ScreenName, uniqueIDString())
 		newTweet, err := api.PostTweet(newTweetText, url.Values{})
 		if err != nil {
 			log.Errorf("could not tweet '%s': %v", newTweetText, err)
-			return
+			continue
 		}
 		log.Infof("Tweeted %d", newTweet.Id)
 	}
 }
+
+// func registerBallPossession()
 
 func getenv(name string) string {
 	v := os.Getenv(name)
@@ -76,7 +88,7 @@ func getenv(name string) string {
 }
 
 func matchTweet(tweetText string) bool {
-	return strings.Contains(strings.ToLower(tweetText), "i have the ball")
+	return strings.Contains(strings.ToLower(tweetText), keyphrase)
 }
 
 func uniqueIDString() string {

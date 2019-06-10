@@ -2,3 +2,9 @@
 .env
 env.yaml
 .env.local
+
+twlistener.service
+twlistener
+
+!schema.sql
+notes.md

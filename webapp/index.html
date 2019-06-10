@@ -3,14 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Seize the Ball!</title>
+  <title>⚽ Seize the Ball! ⚽</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css?family=Montserrat:400,900" rel="stylesheet">
   <link rel="stylesheet" type="text/css" href="/static/base.css">
 </head>
 <body>
-  <main>
+  <header>
+    <!-- <h1 class="title">Seize the Ball!</h1> -->
+    <nav>
+      <ul>
+        <li>Leaderboard</li>
+      </ul>
+    </nav>
+  </header>
+  <main id="app">
     <div>
-      <h1><span id="username">@{{ .User.ScreenName }} ⚽</span> has the Ball!</h1>
+      <h2 class="headline"><span id="username">@{{ .User.ScreenName }}</span> has the Ball!</h1>
     </div>
   </main>
 </body>
