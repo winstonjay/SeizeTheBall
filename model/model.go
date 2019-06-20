@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	username = getenv("BD_USERNAME")
-	password = getenv("DB_PASSWORD")
-	hostname = getenv("DB_HOSTNAME")
-	schema   = getenv("DB_SCHEMA")
+	username = getenv("DATABASE_USERNAME")
+	password = getenv("DATABASE_PASSWORD")
+	hostname = getenv("DATABASE_HOSTNAME")
+	schema   = getenv("DATABASE_SCHEMA")
 	connfmt  = "%s:%s@tcp(%s)/%s?parseTime=true"
 )
 
