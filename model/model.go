@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	// make mysql driver available
 	_ "github.com/go-sql-driver/mysql"
 )
 
