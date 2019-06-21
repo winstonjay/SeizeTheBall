@@ -9,3 +9,5 @@ handlers:
 
 includes:
   - env.yaml
+
+indexes:
