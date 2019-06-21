@@ -10,16 +10,14 @@
 </head>
 <body>
   <header>
-    <!-- <h1 class="title">Seize the Ball!</h1> -->
-    <nav>
-      <ul>
-        <li>Leaderboard</li>
-      </ul>
-    </nav>
+    <nav><ul><li>Leaderboard</li></ul></nav>
   </header>
   <main id="app">
     <div>
-      <h2 class="headline"><span id="username">@{{ .User.ScreenName }}</span> has the Ball!</h1>
+      <h2 class="headline">
+        <span id="username">@{{ .User.ScreenName }}</span>
+        has the Ball!
+      </h2>
     </div>
   </main>
 </body>

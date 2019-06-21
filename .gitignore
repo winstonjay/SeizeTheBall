@@ -5,6 +5,7 @@ env.yaml
 
 twlistener.service
 twlistener
+pingtest
 
 !schema.sql
 notes.md
