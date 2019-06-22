@@ -10,16 +10,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var (
-	username = getenv("DATABASE_USERNAME")
-	password = getenv("DATABASE_PASSWORD")
-	hostname = getenv("DATABASE_HOSTNAME")
-	schema   = getenv("DATABASE_SCHEMA")
-	connfmt  = "%s:%s@tcp(%s)/%s?parseTime=true"
-)
-
-var connStr = fmt.Sprintf(connfmt, username, password, hostname, schema)
-
 // User :
 type User struct {
 	UserID     int       `json:"userID"`     // user_id
@@ -39,15 +29,17 @@ type Possession struct {
 	Duration     int        `json:"duration"` // duration
 }
 
-// Connect : external function connect to our sql database
-func Connect() (*sql.DB, error) {
+// Connect : external function connect to our sql database [patch for now]
+func Connect(username, password, hostname, schema string) (*sql.DB, error) {
+	var connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
+		username, password, hostname, schema)
 	return sql.Open("mysql", connStr)
 }
 
 // RegisterPossession :
 func RegisterPossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	if err := EndLastPossession(db); err != nil {
-		return err
+		return fmt.Errorf("[Error on RegisterPossession=%s]", err)
 	}
 	return CreatePossession(db, tweetID, twitterID, screenName)
 }
@@ -80,7 +72,7 @@ func CurrentPossession(db *sql.DB) (Possession, error) {
 func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	userID, err := GetOrCreateUser(db, twitterID, screenName)
 	if err != nil {
-		return err
+		return fmt.Errorf("[Error on CreatePossession=%s]", err)
 	}
 	stmt, err := db.Prepare(
 		`insert into possession (tweet_id, user_id) values (?, ?)`)
@@ -89,17 +81,26 @@ func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(tweetID, userID)
-	return err
+	if err != nil {
+		return fmt.Errorf("[Error on CreatePossession=%s]", err)
+	}
+	return nil
 }
 
 // EndLastPossession : ...
 func EndLastPossession(db *sql.DB) error {
 	var lastID int
 	err := db.QueryRow(`select max(possession_id) from possession`).Scan(&lastID)
+	if err != nil {
+		return fmt.Errorf("[Error on EndLastPossession#1=%s]", err)
+	}
 	_, err = db.Exec(
 		`update possession
 		set end = now(), duration = timestampdiff(second, start, now())
 		where possession_id=?`, lastID)
+	if err != nil {
+		return fmt.Errorf("[Error on EndLastPossession#2=%s]", err)
+	}
 	return err
 }
 
@@ -136,7 +137,7 @@ func GetAllPossessions(db *sql.DB) ([]Possession, error) {
 func GetOrCreateUser(db *sql.DB, twitterID, screenName string) (int, error) {
 	userID, err := GetUserID(db, twitterID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("[Error on GetOrCreateUser=%s]", err)
 	}
 	// If we got a user and it has an ID set return its UserID
 	if userID != 0 {
@@ -156,7 +157,7 @@ func CreateUser(db *sql.DB, twitterID, screenName string) (int, error) {
 	defer stmt.Close()
 	res, err := stmt.Exec(twitterID, screenName)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("[Error on CreateUser=%s]", err)
 	}
 	lastID, err := res.LastInsertId()
 	if err != nil {
@@ -191,7 +192,7 @@ func GetUserID(db *sql.DB, twitterID string) (int, error) {
 		`select user_id from user where twitter_id = ?`,
 		twitterID).Scan(&userID)
 	if err != nil && err != sql.ErrNoRows {
-		return 0, err
+		return 0, fmt.Errorf("[Error on GetUserID=%s]", err)
 	}
 	return userID, nil
 }

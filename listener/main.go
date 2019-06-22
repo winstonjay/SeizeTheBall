@@ -14,10 +14,17 @@ import (
 )
 
 var (
+	// twitter
 	consumerKey       = getenv("TWITTER_CONSUMER_KEY")
 	consumerSecret    = getenv("TWITTER_CONSUMER_SECRET")
 	accessToken       = getenv("TWITTER_ACCESS_TOKEN")
 	accessTokenSecret = getenv("TWITTER_ACCESS_TOKEN_SECRET")
+
+	// database
+	dbUsername = getenv("DATABASE_USERNAME")
+	dbPassword = getenv("DATABASE_PASSWORD")
+	dbHostname = getenv("DATABASE_HOSTNAME")
+	dbSchema   = getenv("DATABASE_SCHEMA")
 )
 
 const (
@@ -53,7 +60,7 @@ func main() {
 			continue
 		}
 
-		db, err := model.Connect()
+		db, err := model.Connect(dbUsername, dbPassword, dbHostname, dbSchema)
 		defer db.Close()
 		if err != nil {
 			log.Errorf("Could not connect to DB: %s", err)
