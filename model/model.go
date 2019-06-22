@@ -31,7 +31,8 @@ type Possession struct {
 
 // Connect : external function connect to our sql database [patch for now]
 func Connect(username, password, hostname, schema string) (*sql.DB, error) {
-	var connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
+	var connStr = fmt.Sprintf(
+		"%s:%s@tcp(%s:3306)/%s?parseTime=true",
 		username, password, hostname, schema)
 	return sql.Open("mysql", connStr)
 }
@@ -72,7 +73,7 @@ func CurrentPossession(db *sql.DB) (Possession, error) {
 func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	userID, err := GetOrCreateUser(db, twitterID, screenName)
 	if err != nil {
-		return fmt.Errorf("[Error on CreatePossession=%s]", err)
+		return err
 	}
 	stmt, err := db.Prepare(
 		`insert into possession (tweet_id, user_id) values (?, ?)`)
@@ -82,7 +83,7 @@ func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	defer stmt.Close()
 	_, err = stmt.Exec(tweetID, userID)
 	if err != nil {
-		return fmt.Errorf("[Error on CreatePossession=%s]", err)
+		return err
 	}
 	return nil
 }
@@ -90,16 +91,20 @@ func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 // EndLastPossession : ...
 func EndLastPossession(db *sql.DB) error {
 	var lastID int
-	err := db.QueryRow(`select max(possession_id) from possession`).Scan(&lastID)
+	res, err := db.Query(`select max(possession_id) from possession`)
 	if err != nil {
-		return fmt.Errorf("[Error on EndLastPossession#1=%s]", err)
+		return err
+	}
+	err = res.Scan(&lastID)
+	if err != nil {
+		return nil
 	}
 	_, err = db.Exec(
 		`update possession
 		set end = now(), duration = timestampdiff(second, start, now())
 		where possession_id=?`, lastID)
 	if err != nil {
-		return fmt.Errorf("[Error on EndLastPossession#2=%s]", err)
+		return err
 	}
 	return err
 }
@@ -137,7 +142,7 @@ func GetAllPossessions(db *sql.DB) ([]Possession, error) {
 func GetOrCreateUser(db *sql.DB, twitterID, screenName string) (int, error) {
 	userID, err := GetUserID(db, twitterID)
 	if err != nil {
-		return 0, fmt.Errorf("[Error on GetOrCreateUser=%s]", err)
+		return 0, err
 	}
 	// If we got a user and it has an ID set return its UserID
 	if userID != 0 {
@@ -192,7 +197,7 @@ func GetUserID(db *sql.DB, twitterID string) (int, error) {
 		`select user_id from user where twitter_id = ?`,
 		twitterID).Scan(&userID)
 	if err != nil && err != sql.ErrNoRows {
-		return 0, fmt.Errorf("[Error on GetUserID=%s]", err)
+		return 0, err
 	}
 	return userID, nil
 }

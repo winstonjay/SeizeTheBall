@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+var (
+	// database
+	dbUsername = getenv("DATABASE_USERNAME")
+	dbPassword = getenv("DATABASE_PASSWORD")
+	dbHostname = getenv("DATABASE_HOSTNAME")
+	dbSchema   = getenv("DATABASE_SCHEMA")
+)
+
 type testInput struct {
 	tweetID    string
 	screenName string
@@ -21,13 +29,13 @@ var userTestData = []testInput{
 }
 
 func TestConnection(t *testing.T) {
-	db, err := sql.Open("mysql", connStr)
+	db, err := Connect(dbUsername, dbPassword, dbHostname, dbSchema)
 	if err != nil {
-		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connStr)
+		t.Fatalf("Connection failed: %s", err)
 	}
 	defer db.Close()
 	if err := db.Ping(); err != nil {
-		t.Fatalf("Connection failed: %s.\nconnectionStr=%s", err, connStr)
+		t.Fatalf("Connection failed: %s.", err)
 	}
 }
 
@@ -226,7 +234,7 @@ func TestGetOrCreateUser(t *testing.T) {
 }
 
 func setupTestDB() *sql.DB {
-	db, err := sql.Open("mysql", connStr)
+	db, err := Connect(dbUsername, dbPassword, dbHostname, dbSchema)
 	if err != nil {
 		panic(err)
 	}

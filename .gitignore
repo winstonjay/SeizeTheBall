@@ -2,6 +2,7 @@
 .env
 env.yaml
 .env.local
+.env.dh
 
 twlistener.service
 twlistener
