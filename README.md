@@ -18,7 +18,7 @@ $ for line in $(cat .env); do export $line; done
 **Setup database**: Using MySQL 5.6 or later create the database schema.
 
 ```
-$ make localdb
+$ make schema
 ```
 
 Also need to install the go MySQL driver:
