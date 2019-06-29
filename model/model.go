@@ -32,7 +32,7 @@ type Possession struct {
 // Connect : external function connect to our sql database [patch for now]
 func Connect(username, password, hostname, schema string) (*sql.DB, error) {
 	var connStr = fmt.Sprintf(
-		"%s:%s@tcp(%s:3306)/%s?parseTime=true",
+		"%s:%s@tcp(%s)/%s?parseTime=true",
 		username, password, hostname, schema)
 	return sql.Open("mysql", connStr)
 }
@@ -40,7 +40,7 @@ func Connect(username, password, hostname, schema string) (*sql.DB, error) {
 // RegisterPossession :
 func RegisterPossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 	if err := EndLastPossession(db); err != nil {
-		return fmt.Errorf("[Error on RegisterPossession=%s]", err)
+		return err
 	}
 	return CreatePossession(db, tweetID, twitterID, screenName)
 }
@@ -91,12 +91,12 @@ func CreatePossession(db *sql.DB, tweetID, twitterID, screenName string) error {
 // EndLastPossession : ...
 func EndLastPossession(db *sql.DB) error {
 	var lastID int
-	res, err := db.Query(`select max(possession_id) from possession`)
+	err := db.QueryRow(`select ifnull(max(possession_id), 0) from possession`).Scan(&lastID)
 	if err != nil {
 		return err
 	}
-	err = res.Scan(&lastID)
-	if err != nil {
+	if lastID == 0 {
+		// should only happen the first time.
 		return nil
 	}
 	_, err = db.Exec(
@@ -104,7 +104,7 @@ func EndLastPossession(db *sql.DB) error {
 		set end = now(), duration = timestampdiff(second, start, now())
 		where possession_id=?`, lastID)
 	if err != nil {
-		return err
+		return fmt.Errorf("[Error on EndLastPossession#2=%s]", err)
 	}
 	return err
 }

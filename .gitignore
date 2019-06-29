@@ -1,8 +1,7 @@
 # environment varibles
 .env
 env.yaml
-.env.local
-.env.dh
+.env._*
 
 twlistener.service
 twlistener
